@@ -134,7 +134,7 @@ final class StudioTests: XCTestCase {
         try await Task.sleep(nanoseconds: 200_000_000)
         task.cancel()
         do { _ = try await task.value; XCTFail("Cancellation must not succeed") }
-        catch is CancellationError {} 
+        catch is CancellationError {}
         catch { XCTFail("Expected CancellationError, got \(error)") }
     }
 }
