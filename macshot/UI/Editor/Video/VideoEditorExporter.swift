@@ -53,7 +53,7 @@ final class VideoEditorExporter {
     /// Whether saving must render (otherwise the source file is copied as is).
     func needsRender(_ settings: VideoExportSettings) -> Bool {
         let project = document.project
-        return settings.format == .gif || settings.scale < 0.999 || settings.quality != .high
+        return StudioPreferences.autoBalance || settings.format == .gif || settings.scale < 0.999 || settings.quality != .high
             || project.hasEdits || document.cursorIsEditable || document.cameraURL != nil
             || (document.overlaysAreEditable && document.hasKeystrokes)
     }
@@ -102,7 +102,7 @@ final class VideoEditorExporter {
             session.outputURL = outputURL
             session.outputFileType = .mp4
             session.videoComposition = prepared.composition
-            if !includeAudio { session.audioMix = nil }
+            session.audioMix = includeAudio ? StudioAudio.pitchMix(prepared.processed.audioTracks) : nil
             return VideoExportJob(session: session, sourceLease: lease)
         }
         let canvas = prepared.composition.renderSize

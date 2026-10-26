@@ -18,7 +18,7 @@ struct RecordingSessionStore: Sendable {
         #endif
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
-        return support.appendingPathComponent("com.sw33tlie.macshot/Recordings", isDirectory: true)
+        return support.appendingPathComponent("local.gkgy.macshotstudio/Recordings", isDirectory: true)
     }
 
     nonisolated static func owns(_ url: URL, root: URL = Self.rootURL) -> Bool {

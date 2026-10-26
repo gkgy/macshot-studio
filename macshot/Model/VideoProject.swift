@@ -249,22 +249,34 @@ nonisolated struct VideoCameraStyle: Codable, Equatable, Sendable {
     var show = true
     var shape: Shape = .circle
     /// Diameter / height as a fraction of the canvas's shorter side.
-    var size: Double = 0.24
+    var size: Double = 0.10
     var position: VideoOverlayPosition = .bottomRight
     var mirror = true
+    var techBackground = true
+    var backgroundPreset = "cyan-grid"
+    var backgroundBrightness = 0.0
+    var backgroundPatternScale = 1.0
+    var stabilizePerson = true
+    var stabilizationStrength = 1.0
     var shrinkOnZoom = true
     var shadow = true
 
     init() {}
 
-    private enum CodingKeys: String, CodingKey { case show, shape, size, position, mirror, shrinkOnZoom, shadow }
+    private enum CodingKeys: String, CodingKey { case show, shape, size, position, mirror, shrinkOnZoom, shadow, techBackground, backgroundPreset, backgroundBrightness, backgroundPatternScale, stabilizePerson, stabilizationStrength }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         show = c.decode(.show, or: true)
         shape = c.decode(.shape, or: .circle)
-        size = VideoProjectLimits.clamp(c.decode(.size, or: 0.24), 0.08...0.6, 0.24)
+        size = VideoProjectLimits.clamp(c.decode(.size, or: 0.10), 0.08...0.6, 0.10)
         position = c.decode(.position, or: .bottomRight)
         mirror = c.decode(.mirror, or: true)
+        techBackground = c.decode(.techBackground, or: true)
+        backgroundPreset = c.decode(.backgroundPreset, or: "cyan-grid")
+        backgroundBrightness = VideoProjectLimits.clamp(c.decode(.backgroundBrightness, or: 0.0), -0.2...0.4, 0)
+        backgroundPatternScale = VideoProjectLimits.clamp(c.decode(.backgroundPatternScale, or: 1.0), 0.5...2.0, 1)
+        stabilizePerson = c.decode(.stabilizePerson, or: true)
+        stabilizationStrength = VideoProjectLimits.clamp(c.decode(.stabilizationStrength, or: 1.0), 0...1, 1)
         shrinkOnZoom = c.decode(.shrinkOnZoom, or: true)
         shadow = c.decode(.shadow, or: true)
     }

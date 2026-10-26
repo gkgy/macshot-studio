@@ -148,6 +148,7 @@ final class VideoEditorPlayback {
         let wasPlaying = isPlaying
         let item = AVPlayerItem(asset: asset)
         item.videoComposition = composition
+        item.audioTimePitchAlgorithm = .spectral
         // Decode ahead generously: the compositor, not decoding, is the cost.
         item.preferredForwardBufferDuration = 2
         player.replaceCurrentItem(with: item)

@@ -142,6 +142,7 @@ extension NSBox {
 final class VideoTransportBar: NSView {
     let addButton: VideoPillButton
     let autoZoomButton: VideoPillButton
+    let wholeSpeedButton: VideoPillButton
     let playButton: VideoIconButton
     let previousButton: VideoIconButton
     let nextButton: VideoIconButton
@@ -157,6 +158,9 @@ final class VideoTransportBar: NSView {
                                     action: #selector(VideoEditorWindowController.showAddMenu(_:)))
         autoZoomButton = VideoPillButton(title: L("Auto Zoom"), symbol: "wand.and.stars", target: target,
                                          action: #selector(VideoEditorWindowController.autoZoomAction))
+        wholeSpeedButton = VideoPillButton(title: "全片调速 · 1×", symbol: "gauge.with.dots.needle.67percent", chevron: true, target: target,
+                                           action: #selector(VideoEditorWindowController.showWholeSpeedMenu(_:)))
+        wholeSpeedButton.toolTip = "调整整段视频的速度，声音保持原音高"
         playButton = VideoIconButton(symbol: "play.fill", size: 16, tooltip: L("Play"), target: target,
                                      action: #selector(VideoEditorWindowController.togglePlayAction))
         previousButton = VideoIconButton(symbol: "backward.end.fill", size: 12, tooltip: L("Previous edit"), target: target,
@@ -183,9 +187,9 @@ final class VideoTransportBar: NSView {
         }
         playButton.widthAnchor.constraint(equalToConstant: 36).isActive = true
         playButton.heightAnchor.constraint(equalToConstant: 34).isActive = true
-        for button in [addButton, autoZoomButton, fitButton] { button.heightAnchor.constraint(equalToConstant: 28).isActive = true }
+        for button in [addButton, autoZoomButton, wholeSpeedButton, fitButton] { button.heightAnchor.constraint(equalToConstant: 28).isActive = true }
 
-        let left = NSStackView(views: [addButton, autoZoomButton])
+        let left = NSStackView(views: [addButton, autoZoomButton, wholeSpeedButton])
         left.spacing = 8
         let center = NSStackView(views: [timeLabel, durationLabel, NSBox.verticalDivider(), previousButton, playButton, nextButton])
         center.spacing = 6

@@ -34,13 +34,13 @@ final class VideoExportJob {
         switch backend {
         case .transcode(let request):
             try await VideoTranscoder.export(request.writing(to: outputURL)) { fraction in
-                DispatchQueue.main.async { progress(fraction) }
+                DispatchQueue.main.async { progress(fraction * (StudioPreferences.autoBalance ? 0.9 : 1)) }
             }
         case .session(let session):
             session.outputURL = outputURL
             let cancellation = SessionCancellation(session: session)
             let timer = Timer(timeInterval: 0.2, repeats: true) { _ in
-                MainActor.assumeIsolated { progress(Double(cancellation.session.progress)) }
+                MainActor.assumeIsolated { progress(Double(cancellation.session.progress) * (StudioPreferences.autoBalance ? 0.9 : 1)) }
             }
             RunLoop.main.add(timer, forMode: .common)
             defer { timer.invalidate() }
@@ -53,6 +53,7 @@ final class VideoExportJob {
                 }
             }, onCancel: { cancellation.cancel() })
         }
+        try await StudioAudio.balance(outputURL)
         progress(1)
     }
 

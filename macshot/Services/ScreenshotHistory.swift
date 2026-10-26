@@ -68,7 +68,7 @@ final class ScreenshotHistory {
         self.maximumPendingSaves = max(1, maximumPendingSaves)
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent("Library/Application Support")
-        historyDir = directory ?? support.appendingPathComponent("com.sw33tlie.macshot/history")
+        historyDir = directory ?? support.appendingPathComponent("local.gkgy.macshotstudio/history")
         try? FileManager.default.createDirectory(at: historyDir, withIntermediateDirectories: true,
                                                  attributes: [.posixPermissions: 0o700])
         let data = try? Data(contentsOf: historyDir.appendingPathComponent("index.json"))

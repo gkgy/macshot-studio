@@ -82,6 +82,7 @@ nonisolated final class VideoCursorLayer: @unchecked Sendable {
 
 /// A second camera video (webcam) composited as a bubble.
 nonisolated final class VideoWebcamLayer: @unchecked Sendable {
+    let backgroundProcessor = StudioBackgroundProcessor()
     let trackID: Int32
     let style: VideoCameraStyle
     /// Upright transform for the camera track's natural image.
@@ -430,7 +431,7 @@ nonisolated enum VideoSceneRenderer {
         let W = layout.canvasSize.width, H = layout.canvasSize.height
         let short = min(W, H)
         var size = CGFloat(style.size) * short
-        if style.shrinkOnZoom, camera.zoom > 1.001 {
+        if style.shrinkOnZoom, !style.stabilizePerson, camera.zoom > 1.001 {
             let amount = min(1, (camera.zoom - 1) / 0.8)
             size *= 1 - 0.35 * amount
         }
@@ -448,7 +449,7 @@ nonisolated enum VideoSceneRenderer {
         let rect = CGRect(x: x, y: H - yTop - bh, width: bw, height: bh)
 
         // Aspect-fill the camera image into the bubble.
-        var cam = frame
+        var cam = (style.techBackground || style.stabilizePerson) ? layer.backgroundProcessor.composite(frame, style: style) : frame
         let fe = cam.extent
         guard fe.width > 0, fe.height > 0 else { return image }
         if style.mirror {

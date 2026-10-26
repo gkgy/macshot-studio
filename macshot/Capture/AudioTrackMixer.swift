@@ -27,6 +27,10 @@ enum AudioTrackMixer {
         guard source.resolvingSymlinksInPath() != destination.resolvingSymlinksInPath() else {
             throw MixError.originalWouldBeOverwritten
         }
+        if StudioPreferences.autoBalance {
+            try await StudioAudio.mix(source: source, destination: destination, volumes: volumes)
+            try cancellation.check(); progress(1); return
+        }
         let prepared: Prepared = try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 continuation.resume(with: Result { try prepare(source: source, destination: destination,

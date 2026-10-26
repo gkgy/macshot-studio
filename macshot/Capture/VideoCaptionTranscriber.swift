@@ -25,35 +25,7 @@ enum VideoCaptionTranscriber {
 
     static func transcribe(asset: AVAsset, lease: TemporaryMediaLease) async throws -> [CaptionTimeline.Word] {
         defer { withExtendedLifetime(lease) {} }
-        guard try await authorize() else { throw TranscriptionError.notAuthorized }
-        let recognizer = SFSpeechRecognizer(locale: Locale.current) ?? SFSpeechRecognizer()
-        guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {
-            throw TranscriptionError.unavailable
-        }
-        guard !(try await asset.load(.tracks)).filter({ $0.mediaType == .audio }).isEmpty else {
-            throw TranscriptionError.noAudio
-        }
-        let duration = try await asset.load(.duration).seconds
-        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("macshot-captions-\(UUID().uuidString)",
-                                                                                   isDirectory: true)
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: folder) }
-        var words: [CaptionTimeline.Word] = []
-        var start = 0.0
-        var index = 0
-        while start < duration - 0.05 {
-            try Task.checkCancellation()
-            let length = min(chunkDuration, duration - start)
-            let url = folder.appendingPathComponent("chunk-\(index).m4a")
-            try await exportAudio(asset: asset, range: CMTimeRange(start: CMTime(seconds: start, preferredTimescale: 600),
-                                                                   duration: CMTime(seconds: length, preferredTimescale: 600)),
-                                  to: url)
-            let chunk = try await recognize(url: url, recognizer: recognizer)
-            words += chunk.map { CaptionTimeline.Word(text: $0.text, start: $0.start + start, end: $0.end + start) }
-            start += length
-            index += 1
-        }
-        return words
+        return try await StudioWhisper.transcribe(asset: asset)
     }
 
     private static func authorize() async throws -> Bool {

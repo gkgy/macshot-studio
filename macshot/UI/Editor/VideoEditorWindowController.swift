@@ -243,6 +243,13 @@ final class VideoEditorWindowController: NSWindowController, NSWindowDelegate {
         topBar.undoButton.isEnabled = editorDocument.canUndo
         topBar.redoButton.isEnabled = editorDocument.canRedo
         transport.setMuted(editorDocument.project.muted)
+        let project = editorDocument.project
+        let wholeSpeed = project.speeds.count == 1 ? project.speeds.first : nil
+        let wholeFactor = wholeSpeed.flatMap { segment -> Double? in
+            abs(segment.startTime - project.trimStart) < 0.001 && abs(segment.endTime - project.trimEnd) < 0.001 ? segment.speedFactor : nil
+        }
+        transport.wholeSpeedButton.title = project.speeds.isEmpty ? "全片调速 · 1×" : wholeFactor.map { "全片调速 · \(String(format: "%g×", $0))" } ?? "全片调速 · 自定义"
+
         transport.durationLabel.stringValue = "/ " + VideoTransportBar.format(VideoRenderPlanner.outputDuration(project: editorDocument.project))
         let aspect = editorDocument.project.look.frame.aspect
         stageToolbar.aspectPopup.selectItem(at: VideoAspectRatio.allCases.firstIndex(of: aspect) ?? 0)
@@ -352,6 +359,8 @@ final class VideoEditorWindowController: NSWindowController, NSWindowDelegate {
         menu.addItem(item(L("Cut"), "scissors", .edits))
         let speed = item(L("Speed"), "gauge.with.dots.needle.67percent", nil, #selector(addSpeedAction))
         menu.addItem(speed)
+        let whole = NSMenuItem(title: "整段变速（声音保持原音高）", action: nil, keyEquivalent: "")
+        whole.submenu = wholeSpeedMenu(); menu.addItem(whole)
         menu.addItem(item(L("Freeze Frame"), "snowflake", nil, #selector(addFreezeAction)))
         menu.addItem(.separator())
         menu.addItem(item(L("Text"), "textformat", .overlays))
@@ -363,6 +372,40 @@ final class VideoEditorWindowController: NSWindowController, NSWindowDelegate {
     @objc private func addMenuItem(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? Int, let lane = VideoTimelineView.Lane(rawValue: raw) else { return }
         addItem(lane, at: playback.currentSourceTime)
+    }
+
+    @objc func showWholeSpeedMenu(_ sender: NSView) {
+        wholeSpeedMenu().popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.maxY + 4), in: sender)
+    }
+
+    private func wholeSpeedMenu() -> NSMenu {
+        let menu = NSMenu()
+        let project = editorDocument.project
+        for factor in [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0] {
+            guard let preview = project.copy() else { continue }
+            preview.speeds.removeAll()
+            if factor != 1 { preview.speeds.append(VideoSpeedSegment(startTime: preview.trimStart, endTime: preview.trimEnd, speedFactor: factor)) }
+            let duration = VideoRenderPlanner.outputDuration(project: preview)
+            let choice = NSMenuItem(title: "\(String(format: "%g×", factor))  ·  全片约 \(VideoTransportBar.format(duration))", action: #selector(studioWholeSpeed(_:)), keyEquivalent: "")
+            choice.target = self
+            choice.representedObject = factor
+            if project.speeds.isEmpty && factor == 1 { choice.state = .on }
+            if project.speeds.count == 1, let segment = project.speeds.first,
+               abs(segment.startTime - project.trimStart) < 0.001,
+               abs(segment.endTime - project.trimEnd) < 0.001,
+               abs(segment.speedFactor - factor) < 0.001 { choice.state = .on }
+            menu.addItem(choice)
+        }
+        return menu
+    }
+
+    @objc private func studioWholeSpeed(_ sender: NSMenuItem) {
+        guard let factor = sender.representedObject as? Double else { return }
+        editorDocument.edit([.segments, .render, .timing]) { project in
+            project.speeds.removeAll()
+            if factor != 1 { project.speeds.append(VideoSpeedSegment(startTime: project.trimStart, endTime: project.trimEnd, speedFactor: factor)) }
+        }
+        editorDocument.select(nil)
     }
 
     @objc private func addSpeedAction() { addSpeed(at: playback.currentSourceTime) }

@@ -24,7 +24,7 @@ final class VideoInspectorView: NSView {
             case .cursor: return L("Pointer")
             case .zoom: return L("Zoom")
             case .keystrokes: return L("Keystrokes")
-            case .camera: return L("Camera")
+            case .camera: return "摄像头 / 科技背景"
             case .captions: return L("Captions")
             }
         }
@@ -265,7 +265,11 @@ final class VideoInspectorView: NSView {
 
     // MARK: Background
 
+    @objc private func showStudioCameraPanel() { show(section: .camera) }
+
     private func buildBackgroundPanel() {
+        add(button("小头像 · 科技背景 →", symbol: "person.crop.circle", action: #selector(showStudioCameraPanel)))
+
         add(toggle(L("Frame the recording"), subtitle: L("Background, padding, rounded corners and shadow"),
                    get: { [unowned self] in self.look.frame.enabled }) { p, on in p.look.frame.enabled = on })
         add(InspectorSectionHeader(L("Background")))
@@ -571,10 +575,44 @@ final class VideoInspectorView: NSView {
 
     private func buildCameraPanel() {
         guard document.cameraURL != nil else {
-            add(note(L("Turn on the camera before recording. macshot records it separately so you can move, resize, restyle or hide it here, and shrink it during zooms.")))
+            add(note("这段视频没有独立摄像头轨道，因此无法添加小头像或替换头像背景。下次录制前，请在录制工具栏开启摄像头。完整录制项目保留 camera.mp4 后，这里会显示科技背景与头像大小设置。"))
             return
         }
         add(toggle(L("Show camera"), get: { [unowned self] in self.look.camera.show }) { p, on in p.look.camera.show = on })
+        add(toggle("科技头像背景", subtitle: "本地人像分割 · 编辑预览与导出生效", get: { [unowned self] in self.look.camera.techBackground }) { p, on in p.look.camera.techBackground = on })
+        add(toggle("人物稳定居中", subtitle: "抵消头部位置偏移；保留转头和说话动作", get: { [unowned self] in self.look.camera.stabilizePerson }) { p, on in p.look.camera.stabilizePerson = on })
+        add(slider("稳定强度", 0...1, get: { [unowned self] in self.look.camera.stabilizationStrength }, format: { "\(Int(($0 * 100).rounded()))%" }) { p,v in p.look.camera.stabilizationStrength = v })
+        add(InspectorSectionHeader("头像背景 · 12 款"))
+        let presets = StudioCameraBackgrounds.all
+        let popup = NSPopUpButton(frame: .zero, pullsDown: false)
+        popup.addItems(withTitles: presets.map(\.title) + ["自定义图片 / 旧科技演播室"])
+        popup.target = self; popup.action = #selector(studioCameraBackgroundChanged(_:))
+        popup.setAccessibilityLabel("头像背景预设")
+        popup.selectItem(at: presets.firstIndex { $0.id == look.camera.backgroundPreset } ?? presets.count)
+        add(popup)
+        refreshers.append { [weak self, weak popup] in
+            guard let self else { return }
+            popup?.selectItem(at: presets.firstIndex { $0.id == self.look.camera.backgroundPreset } ?? presets.count)
+        }
+        let context = CIContext(options: [.cacheIntermediates: false])
+        let tiles: [VideoSwatchGrid.Tile] = presets.map { preset in
+            let image = StudioCameraBackgrounds.image(id: preset.id, patternScale: 1)
+            let cg = image.flatMap { context.createCGImage($0, from: $0.extent) }
+            return .init(id: preset.title, draw: { rect in
+                if let cg { NSImage(cgImage: cg, size: NSSize(width: 640,height:640)).draw(in: rect) }
+            })
+        }
+        let backgroundGrid = VideoSwatchGrid(tiles: tiles, selectedIndex: presets.firstIndex { $0.id == look.camera.backgroundPreset } ?? -1) { [weak self] index in
+            self?.document.edit([.render]) { p in p.look.camera.backgroundPreset = presets[index].id; p.look.camera.techBackground = true }
+            self?.document.rememberLook()
+        }
+        add(backgroundGrid)
+        refreshers.append { [weak self, weak backgroundGrid] in
+            guard let self else { return }
+            backgroundGrid?.setSelectedIndex(presets.firstIndex { $0.id == self.look.camera.backgroundPreset } ?? -1)
+        }
+        add(slider("背景亮度", -0.2...0.4, get: { [unowned self] in self.look.camera.backgroundBrightness }, format: { String(format: "%+.0f", $0 * 100) }) { p,v in p.look.camera.backgroundBrightness = v })
+        add(slider("背景纹理大小", 0.5...2, get: { [unowned self] in self.look.camera.backgroundPatternScale }, format: { String(format: "%.0f%%", $0 * 100) }) { p,v in p.look.camera.backgroundPatternScale = v })
         let shapes = VideoCameraStyle.Shape.allCases
         add(segments(L("Shape"), [L("Circle"), L("Square"), L("Wide"), L("Tall")],
                      get: { [unowned self] in shapes.firstIndex(of: self.look.camera.shape) ?? 0 }) { p, i in
@@ -584,12 +622,22 @@ final class VideoInspectorView: NSView {
             slider(L("Size"), 0.08...0.6, get: { [unowned self] in self.look.camera.size },
                    format: { "\(Int(($0 * 100).rounded()))%" }) { p, v in p.look.camera.size = v },
             toggle(L("Mirror"), get: { [unowned self] in self.look.camera.mirror }) { p, on in p.look.camera.mirror = on },
-            toggle(L("Shrink during zooms"), get: { [unowned self] in self.look.camera.shrinkOnZoom }) { p, on in
+            toggle(L("Shrink during zooms"), subtitle: "开启人物稳定时保持头像框大小", get: { [unowned self] in self.look.camera.shrinkOnZoom }) { p, on in
                 p.look.camera.shrinkOnZoom = on },
             toggle(L("Shadow"), get: { [unowned self] in self.look.camera.shadow }) { p, on in p.look.camera.shadow = on },
         ]))
         add(InspectorSectionHeader(L("Position")))
         add(positionGrid(get: { [unowned self] in self.look.camera.position }) { p, pos in p.look.camera.position = pos })
+    }
+
+    @objc private func studioCameraBackgroundChanged(_ sender: NSPopUpButton) {
+        let presets = StudioCameraBackgrounds.all
+        let index = sender.indexOfSelectedItem
+        document.edit([.render]) { p in
+            p.look.camera.backgroundPreset = index < presets.count ? presets[index].id : "custom"
+            p.look.camera.techBackground = true
+        }
+        document.rememberLook()
     }
 
     // MARK: Captions
@@ -673,7 +721,7 @@ final class VideoInspectorView: NSView {
             add(slider(L("Speed"), VideoSpeedSegment.minFactor...VideoSpeedSegment.maxFactor,
                        get: { [unowned self] in self.document.project.speeds.first { $0.id == id }?.speedFactor ?? 2 },
                        format: { VideoTimelineView.speedLabel($0) }, change: [.render, .segments, .timing]) { p, v in
-                let snapped = [0.25, 0.5, 0.75, 1.5, 2, 3, 4, 5, 8, 10].min { abs($0 - v) < abs($1 - v) } ?? v
+                let snapped = [0.25, 0.5, 0.75, 1.25, 1.5, 2, 3, 4, 5, 8, 10].min { abs($0 - v) < abs($1 - v) } ?? v
                 p.speeds.first { $0.id == id }?.speedFactor = abs(snapped - v) < 0.08 ? snapped : (v * 20).rounded() / 20
             })
         case .freeze(let id):
@@ -822,6 +870,11 @@ final class VideoSwatchGrid: NSView {
         self.onSelect = onSelect
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
+    }
+
+    func setSelectedIndex(_ index: Int) {
+        guard selectedIndex != index else { return }
+        selectedIndex = index; needsDisplay = true
     }
 
     required init?(coder: NSCoder) { fatalError() }

@@ -31,7 +31,7 @@ final class VideoSpeedSegment: Codable {
 
     /// Presets surfaced in the right-click menu. 1× is intentionally absent
     /// (use "Delete Speed" instead).
-    static let presetFactors: [Double] = [0.25, 0.5, 0.75, 2.0, 3.0, 5.0, 10.0]
+    static let presetFactors: [Double] = [0.25, 0.5, 0.75, 1.25, 1.5, 2.0, 3.0, 5.0, 10.0]
 
     var id: UUID
     var startTime: Double

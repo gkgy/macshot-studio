@@ -1,0 +1,30 @@
+name: Studio checks
+on:
+  push:
+    branches: [studio-custom]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: studio-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test-and-build:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Select Xcode
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: Focused Studio tests
+        env:
+          CONFIGURATION: Release
+        run: scripts/run-tests.sh --offline StudioTests VideoSpeedAndFreezeTests KeystrokeAndCaptionTimelineTests
+      - name: Release compile
+        run: >-
+          xcodebuild -project macshot.xcodeproj -scheme macshot
+          -configuration Release -destination 'platform=macOS'
+          CODE_SIGNING_ALLOWED=NO SWIFT_ACTIVE_COMPILATION_CONDITIONS=OFFLINE build

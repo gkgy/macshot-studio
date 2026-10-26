@@ -85,12 +85,13 @@ enum VideoTranscoder {
             // Keep a mono microphone mono. Stereo/mixed-format sources retain
             // the existing stereo export policy instead of guessing a layout.
             let channels = !channelCounts.isEmpty && channelCounts.allSatisfy { $0 == 1 } ? 1 : 2
-            let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
+            let output = AVAssetReaderAudioMixOutput(audioTracks: [track], audioSettings: [
                 AVFormatIDKey: kAudioFormatLinearPCM, AVLinearPCMBitDepthKey: 16,
                 AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: false,
                 AVLinearPCMIsNonInterleaved: false,
             ])
             output.alwaysCopiesSampleData = false
+            output.audioTimePitchAlgorithm = .spectral
             let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
                 AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 48_000,
                 AVNumberOfChannelsKey: channels, AVEncoderBitRateKey: audioBitrate,

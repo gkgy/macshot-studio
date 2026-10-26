@@ -1,36 +1,9 @@
-# Security Policy
+# Security / 安全说明
 
-I do vulnerability research and bug bounty for a living, so I know what a good
-disclosure experience looks like from the reporter's side, and what a bad one
-feels like. You'll get the good kind here.
+Report Studio-specific issues to the maintainer through the repository's available private reporting/contact channels. Do not publish credentials, private recordings or exploitable details in a public issue. This community fork does not promise a response SLA or automatic security updates.
 
-## Reporting a vulnerability
+Studio 的安全问题请通过仓库提供的私密报告／联系渠道联系维护者。不要在公开 Issue 中提交凭据、私人录制或可直接利用的细节。本社区分支不承诺响应时限或自动安全更新。
 
-**Preferred:** [GitHub Private Vulnerability Reporting](https://github.com/sw33tLie/macshot/security/advisories/new).
-It's private and structured, and we can work on the fix together in a private fork.
+The [preserved upstream security policy](SECURITY.upstream.md) describes upstream reporting. Do not treat its maintainer contacts or response promises as commitments by this fork. Issues in inherited upstream code can also be reported to upstream through its own policy.
 
-**Also fine:** DM me on X at [x.com/sw33tLie](https://x.com/sw33tLie). Good for a
-heads-up or if you can't use GitHub. Please don't put PoCs or exploit details in
-public issues, and don't test against infrastructure you don't own.
-
-I aim to respond within 48 hours, usually much faster. High/Critical issues get a
-fix or a concrete plan within days, not weeks, and fixes reach users quickly via
-Sparkle auto-update.
-
-## Out of scope
-
-Auto-redact regex misses (best-effort, documented as such), issues
-requiring a compromised machine or physical access, vulnerabilities in Sparkle/
-macOS/dependencies themselves (report upstream, but tell me so I can ship the
-bumped version), and DoS of the app's UI.
-
-## Supported versions
-
-Only the latest release of each variant (normal and Offline). Sparkle keeps
-almost everyone current within days.
-
-## Credit
-
-No paid bounty (this is a free GPLv3 project), but you'll get credited in the
-release notes, CHANGELOG, and the GitHub advisory unless you'd rather stay
-anonymous.
+[原版安全政策](SECURITY.upstream.md) 仅说明上游渠道，不代表本分支维护者的联系信息或时限承诺。继承代码中的问题也可按上游政策向原项目报告。

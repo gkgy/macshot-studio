@@ -1,6 +1,8 @@
-# Contributing to macshot
+# Contributing to Macshot Studio
 
-Thanks for your interest in contributing! macshot is open to bug fixes, improvements, and new features.
+Thanks for contributing to this independent fork. Target the `studio-custom` branch. Read the English/Chinese README for Studio setup and limitations. Keep upstream attribution and the GPLv3 license.
+
+欢迎贡献：请向 `studio-custom` 分支提交，先阅读中英文 README 的配置与限制，保留上游归属和 GPLv3 许可。赞助名单只需修改 `SPONSORS.md`。
 
 ## Before you start
 

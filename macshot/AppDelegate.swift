@@ -259,6 +259,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }()
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
+        StudioPreferences.register()
         // Prevent multiple instances — if already running, activate the existing one and quit
         let bundleID = Bundle.main.bundleIdentifier ?? "com.sw33tlie.macshot.macshot"
         let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
@@ -315,12 +316,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         // something references ScreenshotHistory.shared.
         _ = ScreenshotHistory.shared
 
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: self, userDriverDelegate: nil)
+        updaterController = SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: self, userDriverDelegate: nil)
         // Disable silent update downloads — updates should only apply
         // via explicit user action ("Check for Updates..." / Install),
         // so an automatic update can't be mistaken for a silent crash.
         updaterController.updater.automaticallyDownloadsUpdates = false
         setupMainMenu()
+        let studioMenu = NSMenuItem(title: "Studio 定制设置…", action: #selector(StudioSettingsWindow.openSettings), keyEquivalent: "")
+        studioMenu.target = StudioSettingsWindow.self
+        NSApp.mainMenu?.items.first?.submenu?.insertItem(studioMenu, at: 1)
         setupStatusBar()
         DistributedNotificationCenter.default().addObserver(
             self,
@@ -1135,7 +1139,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
     }
 
     /// Region-capture → OCR → translate → draw the translation in place over the
-    /// original text on the screenshot (macshot://ocr-translate). `target` nil
+    /// original text on the screenshot (macshotstudio://ocr-translate). `target` nil
     /// uses the saved default language.
     private func beginCaptureTranslate(target: String?, fromMenu: Bool) {
         guard canStartCapture else { return }
@@ -2327,7 +2331,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
 
     /// Open a history entry in the editor by its id, restoring editable annotations when
     /// available (falls back to the flattened image, like the history overlay does). Lets
-    /// external tools re-open a specific capture for editing — `macshot://edit?id=<id>` —
+    /// external tools re-open a specific capture for editing — `macshotstudio://edit?id=<id>` —
     /// without flattening it, which `open?file=` cannot do.
     private func openHistoryEntryInEditor(id: String) {
         guard let entry = ScreenshotHistory.shared.entries.first(where: { $0.id == id }) else { return }
@@ -2399,7 +2403,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         let imageExtensions: Set<String> = ["png", "jpg", "jpeg", "tiff", "tif", "bmp", "gif", "heic", "heif", "webp", "icns"]
         let videoExtensions: Set<String> = ["mp4", "mov", "m4v"]
         for url in urls {
-            if url.scheme == "macshot" {
+            if url.scheme == "macshotstudio" {
                 let urlSchemeEnabled = UserDefaults.standard.object(forKey: "urlSchemeEnabled") as? Bool ?? true
                 guard urlSchemeEnabled else { continue }
                 if Self.screenCaptureURLActions.contains(url.host ?? "") {
@@ -2428,8 +2432,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SPUUpdaterDelegate {
         }
     }
 
-    /// Handle macshot:// URL scheme actions from external tools (Raycast, Alfred, etc.).
-    /// Usage: `open macshot://capture`, `open macshot://ocr`, etc.
+    /// Handle macshotstudio:// URL scheme actions from external tools (Raycast, Alfred, etc.).
+    /// Usage: `open macshotstudio://capture`, `open macshotstudio://ocr`, etc.
     private static let screenCaptureURLActions: Set<String> = [
         "capture", "capture-fullscreen", "capture-last", "quick-capture",
         "ocr", "ocr-translate", "record", "record-fullscreen", "scroll-capture",

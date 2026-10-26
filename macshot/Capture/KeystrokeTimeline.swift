@@ -116,9 +116,9 @@ nonisolated enum CaptionTimeline {
             current.removeAll()
         }
         for word in words where !word.text.trimmingCharacters(in: .whitespaces).isEmpty {
-            if let last = current.last, word.start - last.end > maxGap || current.count >= maxWords { flush() }
+            if let last = current.last, word.start - last.end > maxGap || current.count >= maxWords || current.reduce(0, { $0 + $1.text.count }) + word.text.count > 26 { flush() }
             current.append(word)
-            if word.text.last.map({ ".!?".contains($0) }) == true { flush() }
+            if word.text.last.map({ ".!?。！？".contains($0) }) == true { flush() }
         }
         flush()
         for i in result.indices.dropLast() where result[i].endTime > result[i + 1].startTime {

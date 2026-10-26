@@ -1722,6 +1722,11 @@ class SettingsWindowController: NSWindowController, NSToolbarDelegate, NSWindowD
         stack.translatesAutoresizingMaskIntoConstraints = false
         stack.edgeInsets = NSEdgeInsets(top: 0, left: 20, bottom: 16, right: 20)
 
+        let studio = NSButton(title: "Studio：音量平衡 / Whisper / 科技背景设置…", target: StudioSettingsWindow.self, action: #selector(StudioSettingsWindow.openSettings))
+        studio.bezelStyle = .rounded
+        stack.addArrangedSubview(studio)
+        stack.setCustomSpacing(14, after: studio)
+
         // ── Output ────────────────────────────────────────────
         stack.addArrangedSubview(sectionHeader(L("Output")))
         stack.setCustomSpacing(10, after: stack.arrangedSubviews.last!)

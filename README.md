@@ -1,216 +1,100 @@
-# macshot
+# Macshot Studio
 
-> [!IMPORTANT]
-> **Upgrading to a 4.4.0 beta from 4.3.x or beta.1/beta.2?** macshot's developer signature changed in beta.3, so macOS may require you to grant permissions again. If Screen Recording looks enabled but capture fails, remove macshot with the minus button (−) in System Settings, then add it back from Applications with the plus button (+). Re-enable Accessibility or Input Monitoring if prompted. Your settings, history and recordings are preserved. If you already restored permissions in beta.3 or later, you should not need to repeat this.
+**English** | [简体中文](README.zh-CN.md)
 
-<p align="center">
-  <img src="assets/logo.svg" alt="macshot logo" width="200"/>
-</p>
+A native macOS screenshot and recording app with local tools for making tutorial videos. Maintained by [gkgy](https://github.com/gkgy).
 
-<p align="center">
-  <b>The most feature-rich open-source screenshot tool on macOS.</b><br>
-  <br>
-  19+ annotation tools, screen recording with a full video editor, OCR + translation,<br>
-  auto-redact PII, scroll capture, beautify — all native, all free.
-</p>
+This is an independent fork of [sw33tLie/macshot](https://github.com/sw33tLie/macshot), based on **v4.4.0-beta.6** (`38cb9d27269ac34859d2dd17a7d58fbbece82a3a`). The original capture, annotation and video editor are upstream work. Studio adds the features below and retains the **GPLv3 license**. It is not an official macshot release.
 
-<p align="center">
-  <a href="https://github.com/sw33tLie/macshot/releases/latest">Download</a> · <a href="https://github.com/sw33tLie/macshot/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://github.com/sw33tLie/macshot/blob/main/PRIVACY.md">Privacy</a> · <a href="https://github.com/sw33tLie/macshot/blob/main/SECURITY.md">Security</a>
-</p>
+[What changed](#added-on-top-of-macshot) · [Build](#build-from-source) · [Whisper setup](#local-whisper-captions) · [Sponsor](#sponsor) · [Chinese documentation](README.zh-CN.md)
 
-<p align="center">
-  <img src="assets/preview.png" alt="macshot demo" width="700"/>
-</p>
+## Added on top of macshot
 
-<p align="center">
-  <img src="assets/preview-editor.png" alt="macshot video editor — timeline with cut, speed, freeze, zoom and censor effects" width="700"/>
-</p>
+| Area | Studio additions |
+| --- | --- |
+| Webcam backgrounds | **12 bright presets** with names and thumbnails; adjustable brightness and pattern size; custom-image option. Centered artwork stays visible in a small webcam bubble. Uses local Apple Vision person segmentation. |
+| Portrait positioning | **Stable portrait centering** offsets head-position movement. Adjustable strength; keeps bubble size fixed during screen zooms. It preserves facial expressions and head rotation rather than freezing the person. |
+| Small webcam bubble | New-project default is a **10%** bubble at the bottom right. Explicit sizes in existing projects are preserved. |
+| Audio balancing | System audio and microphone tracks are balanced separately before mixing, then limited. MP4 export also balances audio. Native timestamp-aware decoding handles the recordings used during development. |
+| Local captions | Local **faster-whisper** transcription, Chinese phrase grouping, and existing subtitle editing/SRT export. The Studio caption path does not require Siri or Dictation. |
+| Whole-video speed | A visible **whole-video speed** control: **0.5×, 0.75×, 1×, 1.25×, 1.5×, 2×, 3×**. Shows estimated output duration, preserves pitch, and keeps webcam/captions aligned. 90 seconds at 1.5× becomes 60 seconds. |
+| Independent app | “Macshot Studio”, separate app identifier/data folders, Studio settings, and upstream automatic updates disabled. The supplied build script compiles the offline variant. |
 
----
+See [Studio changes](CHANGELOG.STUDIO.md) for version history and [the preserved upstream README](README.upstream.md) for inherited features.
 
-### Why macshot?
+## Using the new controls
 
-- **Capture & annotate in one flow** — select a region, draw arrows/text/shapes/blur, copy to clipboard. One hotkey, zero friction.
-- **Screen recording with built-in editor** — record any area or full screen as MP4/GIF with system audio + microphone. Audio merge dialog with per-track volume control. Trim and export without leaving the app.
-- **Scroll capture** — select a region and scroll. macshot stitches it into one seamless tall (or wide) image automatically.
-- **Upload anywhere** — one-click upload to Google Drive, imgbb, or any S3-compatible service (Cloudflare R2, AWS S3, MinIO, etc.). Link copied to clipboard instantly.
-- **Lightweight & native** — lives in your menu bar. Built with Swift and AppKit, not a web browser in disguise.
-- **40 languages** — English, 中文, 日本語, 한국어, Deutsch, Français, Español, Italiano, Português, العربية, हिन्दी, and 29 more. Auto-detects your system language.
+- **Webcam:** open **Camera / Tech background** in the editor. The Background panel also has a shortcut to the webcam panel. Choose a preset or thumbnail, then adjust brightness, pattern size and stabilization strength. Current custom labels are Chinese; the underlying app also includes upstream language support.
+- **Whole-video speed:** use the button above the timeline. Selecting 1× removes whole-video speed changes. This replaces existing speed segments; Undo restores them.
+- **Audio:** automatic balancing is enabled by default for the app. Configure it in **Macshot Studio → Studio settings**. Volume matching is not perfect speech isolation; different microphones and source material may still need adjustment.
+- **Captions:** configure Python and a local model first, then choose **Generate captions**. Review recognized text before publishing.
 
----
+### What to expect
 
-## Install
+Webcam background replacement and portrait centering work in **editor playback and exported videos**. The floating webcam preview during recording shows the original feed. Original camera media is retained.
 
-**Homebrew:**
+A separate `camera.mp4` in a Studio recording project is required. A flattened video cannot recover its original webcam layer. Face detection can fail during occlusion or large turns; that frame falls back to the original position. Centering reduces translation, not all body motion.
+
+The source is published here; this repository does not currently provide an Apple-notarized public binary. Local ad-hoc builds require macOS permissions and may need permission renewal after rebuilding. This fork disables App Sandbox so it can run local Python/FFmpeg; macOS screen, microphone and camera permission controls still apply.
+
+## Build from source
+
+Requirements: a Mac, full Xcode with a recent macOS SDK, and an executable FFmpeg build. Development validation used Apple Silicon, Xcode 27.1 and macOS 27 SDK. Broader hardware/older-OS support has not been validated for the Studio additions. The inherited project deployment target is not a compatibility guarantee.
+
 ```bash
-brew install --cask macshot
+git clone --branch studio-custom https://github.com/gkgy/macshot-studio.git
+cd macshot-studio
+# Install FFmpeg separately, or provide its absolute path:
+STUDIO_FFMPEG=/absolute/path/to/ffmpeg scripts/build-studio.sh
 ```
 
-**Manual:** Download the latest `.dmg` from [Releases](https://github.com/sw33tLie/macshot/releases), open it, drag to `/Applications`.
+If `ffmpeg` is on `PATH`, simply run `scripts/build-studio.sh`. First build resolves SwiftPM dependencies over the network. Output:
 
----
+```text
+build/Build/Products/Release/Macshot Studio.app
+```
 
-## Quick Start
+The script builds Release + OFFLINE and signs locally with an ad-hoc signature. A dynamically linked FFmpeg may still depend on libraries outside the app; use a suitable self-contained build for portability. FFmpeg/model binaries are not included in the source repository. Before distributing your own binaries, retain required third-party license/source notices for the binaries you actually bundle.
 
-1. Launch macshot — it appears in your menu bar
-2. Press `Cmd+Shift+X` to capture
-3. Drag to select, annotate with the toolbar, press `Cmd+C` to copy
-4. Press `Esc` to cancel
+### Local Whisper captions
 
----
+Use Python 3.9+ compatible with the pinned faster-whisper dependency:
 
-<details>
-<summary><b>All Features</b></summary>
+```bash
+scripts/setup-whisper.sh
+```
 
-### Capture
-- **Instant capture** — global hotkey freezes your screen, select any region
-- **Window snap** — hover over a window and click to capture it exactly; `Tab` toggles snap, `F` for full screen
-- **Resolution & aspect presets** — set an exact pixel size or lock an aspect ratio (1:1, 4:3, 16:9, 9:16, …) before or after selecting; editable width/height fields
-- **Boundary snap** — selection edges snap to strong color edges (UI lines, window borders) while dragging or resizing; hold `Option` to bypass
-- **Scroll capture** — auto-detects vertical or horizontal scrolling, stitches with Apple Vision, live preview panel beside the capture region
-- **Capture delay** — 3/5/10/30 second countdown before capture, set via menu bar. Escape to cancel.
-- **Multi-monitor** — captures all screens simultaneously; drag a selection across screens for a stitched image
-- **Quick save** — `Cmd+Shift+S` to select and save/copy instantly without annotation. Enter key also saves/copies based on preference.
-- **Quick OCR** — `Cmd+Shift+T` to select and extract text instantly
+This installs `faster-whisper==1.2.1` into `~/.local/share/macshot-studio/whisper-venv`. Dependencies are downloaded during setup. Model weights are a separate download; for example:
 
-### Annotation Tools
-- **Arrow** — 5 styles: single, thick/banner, double, open, tail; flip direction toggle; right-click to add anchor points for complex curves
-- **Shapes** — rectangle and ellipse with 3 fill modes (stroke, stroke+fill, fill), corner radius slider
-- **Text** — rich formatting (bold/italic/underline/strikethrough), resizable text box, left/center/right alignment, background fill & outline colors, click to re-edit
-- **Pencil & Marker** — freeform drawing with optional smoothing; smart marker mode snaps to text lines via OCR
-- **Numbered markers** — auto-incrementing (1/I/A/a formats), with optional pointer cone
-- **Stamp / Emoji** — 21 quick emojis, 100+ in categorized picker, or load any image
-- **Censor (Pixelate / Blur / Solid / Erase)** — unified redaction tool with 4 modes: pixelate, Gaussian blur, solid color fill, or smart erase that samples surrounding colors for invisible content removal. Auto-redact PII (emails, phones, credit cards, SSNs, API keys), auto-detect faces and people, or draw in "Text Only" mode to censor just the text in a region
-- **Measure** — pixel ruler with px/pt toggle; hold `1` or `2` for auto-measure
-- **Loupe** — 2x magnifier
-- **Highlight (spotlight)** — drag a region to keep it bright while dimming the rest; adjustable dim strength and solid/dashed border
-- **Color sampler** — eyedropper to pick any color; right-click to copy hex; auto-saves to custom palette slots
-- **Space to reposition** — hold Space while drawing to move the shape without changing its size
-- **Rotation** — rotate shapes via handle, Shift for 90° snaps
-- **Click-to-select** — click any annotation to select it, then edit properties (stroke, style, fill), drag to move, resize via handles, rotate, or delete — all without switching tools
+```bash
+~/.local/share/macshot-studio/whisper-venv/bin/python - <<'PY'
+from huggingface_hub import snapshot_download
+snapshot_download(
+    repo_id="mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+    local_dir="models/faster-whisper-large-v3-turbo",
+)
+PY
+```
 
-### Screen Recording
-- **MP4 (H.264)** up to 120fps or **GIF** (5/10/15fps)
-- **System audio capture** — toggle on/off, excludes macshot's own sounds
-- **Microphone recording** — record voice narration alongside screen capture (permission requested on first use)
-- **Mouse click highlights** — visual ripple on clicks during recording
-- **Selection border** — visible capture region outline during recording
-- **Menu bar stop button** — stop recording from the menu bar icon (appears even if icon is hidden)
-- **Quick settings popover** — change format, FPS, and post-recording action on the fly without opening Preferences
-- **Video editor** — trim timeline, mute/strip audio, play/pause, save (with Save As), upload, reveal in Finder
+In **Studio settings**, configure the Python executable above and the absolute path to your downloaded model folder. A blank model field checks the existing turbo-model cache. Transcription uses `local_files_only=True`: it does not automatically fetch weights or call a cloud transcription API. The current bridge is tuned for Chinese (`language='zh'`); English transcription is not a separately validated Studio feature.
 
-### Output & Upload
-- **Formats** — PNG, JPEG, HEIC, WebP, AVIF with quality slider
-- **Google Drive** — sign in once, uploads to a private folder (defaults to "macshot", configurable in Settings)
-- **imgbb** — anonymous image hosting with shareable links
-- **S3-compatible** — upload to Cloudflare R2, AWS S3, MinIO, DigitalOcean Spaces, Backblaze B2, etc.
-- **Retina downscale** — optional 1x export for smaller files
-- **sRGB color profile** — optional embedding for cross-display consistency
+### Validation
 
-### Editor Window
-- Standalone resizable window with full annotation tools, beautify preview
-- **Add Capture** — capture additional screen regions and compose them into a single image, drag to reposition
-- **Paste image** — `Cmd+V` drops a clipboard image into the canvas as a draggable layer
-- Crop (with rule-of-thirds grid), flip H/V, zoom 0.1x–8x
-- Top bar with pixel dimensions, zoom dropdown (presets, fit canvas, zoom in/out)
+```bash
+CONFIGURATION=Release scripts/run-tests.sh --offline StudioTests
+```
 
-### Beautify
-- macOS window frame with traffic lights, shadow, and gradient background
-- 30 gradient styles including 7 mesh gradients (macOS 15+), adjustable padding/corner radius/shadow
+Development checks: 9 Studio tests passed; Release build succeeded; local full-video export/decode and sampled portrait-position checks passed. Hardware/audio tests that require a local FFmpeg installation may skip on CI. CI results are shown under Actions; local results are not a promise that every environment has been tested.
 
-### Image Effects (Adjust)
-- Non-destructive CIFilter adjustments: Brightness, Contrast, Saturation, Sharpness
-- 8 presets: Noir, Mono, Sepia, Chrome, Fade, Instant, Vivid
-- Works independently or combined with Beautify
-- Live preview in the overlay
+## Sponsor
 
-### Other
-- **OCR & QR** — extract text with Apple Vision (auto-detects all languages on macOS 13+), auto-copy to clipboard, translate to 30+ languages, Google AI Search; also reads QR codes with open/copy/scan actions
-- **Invert colors** — one-click color inversion, apply twice to revert
-- **Background removal** — Apple Vision foreground mask (macOS 14+)
-- **Pin to screen** — floating always-on-top window
-- **Floating thumbnail** — auto-dismiss preview with Copy/Save/Pin/Edit/Upload
-- **Screenshot history with editable annotations** — menu bar submenu + drop-down history panel (`Cmd+Shift+H`). Re-open any capture in the editor with live annotations preserved — edit, then press Done to save back. Drag-and-drop, Quick Look, and right-click actions
-- **QR & barcode detection** — inline Open/Copy actions
-- **Snap alignment guides** — annotations snap to midlines and edges
-- **Liquid Glass theme** (macOS 26 Tahoe) — render toolbars, popovers, and HUDs as Apple's translucent Liquid Glass material
-- **Custom menu bar icon** — use the default, a built-in preset, or any SF Symbol
-- **Auto-updates** via Sparkle
+Thank you for supporting Macshot Studio! Sponsor names are maintained manually in **[SPONSORS.md](SPONSORS.md)**.
 
-</details>
+**No sponsors are listed yet.** After receiving support, the maintainer can add the sponsor's preferred public name and optional link. Amounts and private payment information are not required. No payment account or GitHub Sponsors enrollment is configured here yet.
 
-<details>
-<summary><b>Keyboard Shortcuts</b></summary>
+## Credits and license
 
-**Global hotkeys** (configurable in Preferences)
-
-| Shortcut | Action |
-|---|---|
-| `Cmd+Shift+X` | Capture Area |
-| `Cmd+Shift+F` | Capture Full Screen |
-| `Cmd+Shift+S` | Quick Capture (instant save) |
-| `Cmd+Shift+T` | Capture OCR (instant text extraction) |
-| `Cmd+Shift+R` | Record Area |
-| `Cmd+Shift+H` | Show History Panel |
-
-**General** (during capture)
-
-| Shortcut | Action |
-|---|---|
-| `Enter` | Confirm (save or copy based on preference) |
-| `Cmd+C` | Copy to clipboard |
-| `Cmd+S` | Save to file |
-| `Cmd+Z` / `Cmd+Shift+Z` | Undo / Redo |
-| `Cmd+0` | Reset zoom to 1x |
-| `Esc` | Cancel / close popover |
-| `Delete` | Remove selected annotation |
-| `Tab` | Toggle window snap mode |
-| `F` | Capture full screen (snap mode) |
-| `Shift` (while drawing) | Constrain to straight lines / perfect shapes |
-| `Space` (while drawing) | Reposition shape without changing size |
-| `Right-click` on line/arrow | Add anchor point for multi-point curves |
-
-**Tool shortcuts** (active after selecting a region — customizable in Preferences > Shortcuts)
-
-| Key | Tool |
-|---|---|
-| `A` | Arrow |
-| `L` | Line |
-| `P` | Pencil |
-| `M` | Marker |
-| `R` | Rectangle |
-| `O` | Ellipse |
-| `T` | Text |
-| `N` | Number |
-| `B` | Censor (Pixelate/Blur) |
-| `H` | Highlight (spotlight) |
-| `I` | Color Sampler |
-| `G` | Stamp / Emoji |
-| `S` | Select & Edit |
-| `E` | Open in Editor |
-
-</details>
-
----
-
-## Permissions
-
-macshot requires **Screen Recording** permission. macOS will prompt you on first capture.
-
----
-
-## Donations
-
-Thanks for thinking about it, but macshot doesn't take donations. I make this in my free time and I'm happy to keep it that way, so there's no "buy me a coffee" or sponsorship link.
-
-If you'd like to help out, starring the repo, reporting bugs, or contributing is more than enough. Thank you! 🙏
-
----
-
-## Requirements
-
-macOS 12.3 (Monterey) or later.
-
-## License
-
-[GPLv3](LICENSE)
+- Original application: [sw33tLie/macshot](https://github.com/sw33tLie/macshot), with its contributors and retained history/notices.
+- Studio modifications: [gkgy](https://github.com/gkgy).
+- Person segmentation/face detection: Apple Vision. Captions: faster-whisper/CTranslate2 and separately downloaded Whisper weights. Audio processing: FFmpeg.
+- Application source remains under [GPLv3](LICENSE). See [third-party notes](THIRD_PARTY_NOTICES.md), [privacy](PRIVACY.md), and [contributing](CONTRIBUTING.md).
